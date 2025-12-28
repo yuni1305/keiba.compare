@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>競馬 戦略比較＆ハイブリッド配分</title>
+    <title>競馬 比較＆ハイブリッド配分</title>
     <style>
         :root { --primary: #2c3e50; --accent: #27ae60; --plan-a: #2980b9; --plan-b: #8e44ad; --hybrid: #e67e22; --bg: #f4f7f6; }
         body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 10px; color: #333; line-height: 1.4; }
@@ -42,7 +42,7 @@
 
 <div class="container">
     <div class="card">
-        <h3>1. 買い目の入力</h3>
+        <h3>買い目の入力</h3>
         <div class="grid">
             <div>
                 <div class="plan-header-a">プランA (例:3連複)</div>
@@ -56,12 +56,12 @@
     </div>
 
     <div class="btn-group">
-        <button class="btn-compare" onclick="runCompare()">① 戦略を比較する</button>
+        <button class="btn-compare" onclick="runCompare()">戦略を比較する</button>
     </div>
 
     <div id="compareSection" class="res-section">
         <div class="card">
-            <h3>2. どっちが効率的？ (単体比較)</h3>
+            <h3>買い目比較</h3>
             <table id="compareTable">
                 <thead>
                     <tr><th>項目</th><th style="color:var(--plan-a)">プランA</th><th style="color:var(--plan-b)">プランB</th></tr>
@@ -71,11 +71,11 @@
         </div>
 
         <div class="card hybrid-card">
-            <h3>3. ハイブリッド配分 (両方買う)</h3>
+            <h3>ハイブリッド配分 (両方買う)</h3>
             <div class="grid" style="align-items: end;">
                 <div>
                     <label>合計予算 (円)</label>
-                    <input type="number" id="totalBudget" value="5000" step="100">
+                    <input type="number" id="totalBudget" value="1000" step="100">
                 </div>
                 <div>
                     <label>配分バランス</label>
@@ -92,7 +92,7 @@
 
     <div id="hybridSection" class="res-section">
         <div class="card">
-            <h3>4. 最終買い目・配分詳細</h3>
+            <h3>最終買い目・配分詳細</h3>
             <div id="hybridSummary"></div>
             <div class="grid" id="hybridDetails"></div>
         </div>
