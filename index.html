@@ -1,1 +1,190 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>競馬 戦略比較シミュレーター</title>
+    <style>
+        :root { --primary: #2c3e50; --accent: #27ae60; --plan-a: #2980b9; --plan-b: #8e44ad; --bg: #f8f9fa; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 10px; color: #333; line-height: 1.4; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 15px; }
+        h3 { margin: 0 0 15px 0; font-size: 16px; border-left: 4px solid var(--primary); padding-left: 10px; }
+        
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        label { display: block; font-size: 11px; font-weight: bold; color: #666; margin-bottom: 4px; }
+        input, textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 14px; }
+        textarea { height: 120px; font-family: monospace; }
+        
+        .plan-header-a { color: var(--plan-a); font-weight: bold; margin-bottom: 5px; }
+        .plan-header-b { color: var(--plan-b); font-weight: bold; margin-bottom: 5px; }
+        
+        button { width: 100%; background: var(--accent); color: white; padding: 15px; border: none; border-radius: 4px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        
+        /* 比較テーブル */
+        .compare-table { width: 100%; border-collapse: collapse; margin-top: 10px; background: white; font-size: 13px; }
+        .compare-table th { background: #eee; padding: 10px; border: 1px solid #ddd; }
+        .compare-table td { padding: 10px; border: 1px solid #ddd; text-align: center; }
+        .highlight { background: #fff9c4; font-weight: bold; }
+
+        .result-box { display: none; }
+        .win-a { border-left: 5px solid var(--plan-a); }
+        .win-b { border-left: 5px solid var(--plan-b); }
+        
+        .vs-badge { display: inline-block; padding: 2px 8px; background: #e74c3c; color: white; border-radius: 10px; font-size: 10px; vertical-align: middle; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="card">
+        <h3>1. 共通予算設定</h3>
+        <label>投資総額（円）</label>
+        <input type="number" id="totalBudget" value="3000" step="100">
+    </div>
+
+    <div class="grid">
+        <div class="card">
+            <div class="plan-header-a">プランA (例: 3連複)</div>
+            <textarea id="inputA" placeholder="1-2-3 15.5&#10;1-2-4 22.0"></textarea>
+        </div>
+        <div class="card">
+            <div class="plan-header-b">プランB (例: 3連単)</div>
+            <textarea id="inputB" placeholder="1-2-3 85.0&#10;1-2-4 120.5"></textarea>
+        </div>
+    </div>
+
+    <button onclick="comparePlans()">比較シミュレーション実行</button>
+
+    <div id="resultArea" class="result-box">
+        <div class="card">
+            <h3>2. 戦略比較結果</h3>
+            <table class="compare-table">
+                <thead>
+                    <tr>
+                        <th>項目</th>
+                        <th id="labelA" style="color:var(--plan-a)">プランA</th>
+                        <th id="labelB" style="color:var(--plan-b)">プランB</th>
+                    </tr>
+                </thead>
+                <tbody id="compareBody">
+                    </tbody>
+            </table>
+        </div>
+
+        <div class="card">
+            <h3>3. プラン別詳細配分</h3>
+            <div class="grid" id="detailGrid">
+                </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function parseInput(text) {
+    const lines = text.trim().split('\n');
+    const data = [];
+    lines.forEach(line => {
+        const parts = line.trim().split(/\s+/);
+        if (parts.length >= 2) {
+            const odds = parseFloat(parts.pop());
+            const label = parts.join('-');
+            if (!isNaN(odds)) data.push({ label, odds });
+        }
+    });
+    return data;
+}
+
+function calculateAllocation(budget, dataList) {
+    if (dataList.length === 0) return null;
+    
+    const invSum = dataList.reduce((sum, d) => sum + (1 / d.odds), 0);
+    const synOdds = 1 / invSum;
+    
+    let currentTotal = 0;
+    let allocations = dataList.map(d => {
+        let a = Math.max(100, Math.floor((budget * (1 / d.odds) / invSum) / 100) * 100);
+        currentTotal += a;
+        return { ...d, amt: a };
+    });
+
+    // 余り予算の配分（払い戻しが最小のところに100円ずつ足す）
+    while (currentTotal + 100 <= budget) {
+        let target = allocations.reduce((min, curr) => (curr.amt * curr.odds < min.amt * min.odds) ? curr : min);
+        target.amt += 100;
+        currentTotal += 100;
+    }
+
+    const payouts = allocations.map(a => a.amt * a.odds);
+    return {
+        total: currentTotal,
+        synOdds: synOdds,
+        minPay: Math.min(...payouts),
+        maxPay: Math.max(...payouts),
+        minRoi: (Math.min(...payouts) / currentTotal) * 100,
+        items: allocations
+    };
+}
+
+function comparePlans() {
+    const budget = parseInt(document.getElementById('totalBudget').value);
+    const dataA = parseInput(document.getElementById('inputA').value);
+    const dataB = parseInput(document.getElementById('inputB').value);
+
+    if (dataA.length === 0 || dataB.length === 0) {
+        alert("両方のプランにデータを入力してください。");
+        return;
+    }
+
+    const resA = calculateAllocation(budget, dataA);
+    const resB = calculateAllocation(budget, dataB);
+
+    document.getElementById('resultArea').style.display = 'block';
+
+    // 比較表の作成
+    const rows = [
+        { label: "買い目数", a: dataA.length + " 点", b: dataB.length + " 点" },
+        { label: "合成オッズ", a: resA.synOdds.toFixed(2) + " 倍", b: resB.synOdds.toFixed(2) + " 倍" },
+        { label: "実際の投資額", a: resA.total + " 円", b: resB.total + " 円" },
+        { label: "最低払戻金額", a: Math.floor(resA.minPay) + " 円", b: Math.floor(resB.minPay) + " 円" },
+        { label: "最高払戻金額", a: Math.floor(resA.maxPay) + " 円", b: Math.floor(resB.maxPay) + " 円" },
+        { label: "最低回収率", a: resA.minRoi.toFixed(1) + " %", b: resB.minRoi.toFixed(1) + " %" }
+    ];
+
+    let html = "";
+    rows.forEach(row => {
+        const valA = parseFloat(row.a);
+        const valB = parseFloat(row.b);
+        let classA = (valA > valB) ? 'highlight' : '';
+        let classB = (valB > valA) ? 'highlight' : '';
+        // 買い目数は少ないほうが有利とする場合
+        if(row.label === "買い目数") { [classA, classB] = [classB, classA]; }
+
+        html += `<tr><td>${row.label}</td><td class="${classA}">${row.a}</td><td class="${classB}">${row.b}</td></tr>`;
+    });
+    document.getElementById('compareBody').innerHTML = html;
+
+    // 詳細の作成
+    const detailHtml = [resA, resB].map((res, idx) => `
+        <div style="border:1px solid #eee; padding:10px; border-radius:4px;">
+            <div style="font-weight:bold; font-size:12px; margin-bottom:10px; color:${idx===0?'var(--plan-a)':'var(--plan-b)'}">
+                ${idx===0?'プランA':'プランB'} 詳細
+            </div>
+            <table style="width:100%; font-size:11px;">
+                ${res.items.map(item => `
+                    <tr>
+                        <td>${item.label}</td>
+                        <td style="text-align:right;">${item.amt}円</td>
+                        <td style="text-align:right;">➔${Math.floor(item.amt * item.odds)}</td>
+                    </tr>
+                `).join('')}
+            </table>
+        </div>
+    `).join('');
+    document.getElementById('detailGrid').innerHTML = detailHtml;
+}
+</script>
+
+</body>
+</html>
 
