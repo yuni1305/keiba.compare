@@ -3,87 +3,89 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>競馬 資金配分シミュレーター</title>
+    <title>競馬 戦略比較シミュレーター</title>
     <style>
-        :root { --primary: #1b4332; --plan-a: #2980b9; --plan-b: #8e44ad; --hybrid: #d35400; --bg: #f4f7f6; }
+        :root { --primary: #1b4332; --plan-a: #2980b9; --plan-b: #8e44ad; --bg: #f4f7f6; }
         body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 15px; color: #2c3e50; }
         .container { max-width: 600px; margin: 0 auto; }
         .card { background: white; padding: 18px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px; }
         h3 { margin-top: 0; color: var(--primary); font-size: 16px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
         
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .input-group { margin-bottom: 15px; }
         label { display: block; font-size: 12px; font-weight: bold; color: #7f8c8d; margin-bottom: 4px; }
-        textarea, input, select { width: 100%; padding: 12px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 16px; box-sizing: border-box; }
-        textarea { height: 100px; font-family: monospace; font-size: 14px; }
+        input, textarea { width: 100%; padding: 12px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 16px; box-sizing: border-box; }
         
-        button { width: 100%; color: white; padding: 16px; border: none; border-radius: 4px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        .btn-compare { background: var(--primary); }
-        .btn-hybrid { background: var(--hybrid); }
-
-        table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 10px; }
-        th, td { padding: 10px 5px; border-bottom: 1px solid #eee; text-align: center; }
-        th { background: #f8f9fa; }
-
-        .res-section { display: none; margin-top: 20px; }
-        .hybrid-box { border: 2px solid var(--hybrid); padding: 15px; border-radius: 8px; background: #fffcf9; }
-        .plan-label-a { color: var(--plan-a); font-weight: bold; }
-        .plan-label-b { color: var(--plan-b); font-weight: bold; }
-        .total-pay { font-size: 20px; font-weight: bold; color: #c0392b; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+        textarea { height: 120px; font-family: monospace; font-size: 13px; }
+        
+        button { width: 100%; background: var(--primary); color: white; padding: 16px; border: none; border-radius: 4px; font-size: 16px; font-weight: bold; cursor: pointer; }
+        
+        /* 比較サマリー */
+        .summary-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; background: white; border-radius: 8px; overflow: hidden; }
+        .summary-table th, .summary-table td { padding: 12px; text-align: center; border-bottom: 1px solid #eee; }
+        .summary-table th { background: #f8f9fa; font-size: 12px; color: #666; }
+        
+        /* 詳細エリア */
+        .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .detail-card { background: white; padding: 12px; border-radius: 8px; border-top: 4px solid #ccc; }
+        .detail-a { border-top-color: var(--plan-a); }
+        .detail-b { border-top-color: var(--plan-b); }
+        
+        .plan-title { font-weight: bold; font-size: 14px; margin-bottom: 10px; display: block; }
+        .item-row { display: flex; justify-content: space-between; font-size: 12px; padding: 4px 0; border-bottom: 1px dotted #eee; }
+        .pay-val { font-weight: bold; color: #c0392b; }
+        
+        .res-section { display: none; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div class="card">
-        <h3>1. 買い目入力</h3>
+        <h3>資金配分シミュレーション</h3>
+        
+        <div class="input-group">
+            <label>投資総額 (円)</label>
+            <input type="number" id="budget" value="3000" step="100">
+        </div>
+
         <div class="grid">
             <div>
-                <span class="plan-label-a">プランA</span>
-                <textarea id="inputA" placeholder="1-2 5.5&#10;1-3 8.0"></textarea>
+                <label style="color:var(--plan-a)">プランAの買い目</label>
+                <textarea id="inputA" placeholder="1-2 5.5&#10;1-3 8.0&#10;1-4 12.5"></textarea>
             </div>
             <div>
-                <span class="plan-label-b">プランB</span>
+                <label style="color:var(--plan-b)">プランBの買い目</label>
                 <textarea id="inputB" placeholder="1-2-3 45.0&#10;1-2-4 60.0"></textarea>
             </div>
         </div>
-        <button class="btn-compare" onclick="runAnalysis()">① プランを比較する</button>
+        
+        <button onclick="runAnalysis()">シミュレーション実行</button>
     </div>
 
-    <div id="compareSection" class="res-section card">
-        <h3>2. 予算別シミュレーション比較</h3>
-        <p style="font-size:12px; color:#666;">※各プランを1,000円分買った場合の理想的な傾斜配分比較</p>
-        <table>
-            <thead>
-                <tr><th>項目</th><th class="plan-label-a">プランA</th><th class="plan-label-b">プランB</th></tr>
-            </thead>
-            <tbody id="compareBody"></tbody>
-        </table>
-
-        <div style="margin-top:20px; border-top: 2px dashed #eee; padding-top:15px;">
-            <h3>3. ハイブリッド予算設定 (両方買う)</h3>
-            <div class="grid" style="align-items: end;">
-                <div>
-                    <label>合計予算 (円)</label>
-                    <input type="number" id="totalBudget" value="3000" step="100">
-                </div>
-                <div>
-                    <label>資金配分比率</label>
-                    <select id="ratio">
-                        <option value="0.7">A(7割) : B(3割)</option>
-                        <option value="0.5" selected>A(5割) : B(5割)</option>
-                        <option value="0.3">A(3割) : B(7割)</option>
-                    </select>
-                </div>
-            </div>
-            <button class="btn-hybrid" onclick="runHybrid()">② ハイブリッド資金配分を実行</button>
+    <div id="resultArea" class="res-section">
+        <div class="card" style="padding:0;">
+            <table class="summary-table">
+                <thead>
+                    <tr>
+                        <th>比較項目</th>
+                        <th style="color:var(--plan-a)">プランA</th>
+                        <th style="color:var(--plan-b)">プランB</th>
+                    </tr>
+                </thead>
+                <tbody id="summaryBody"></tbody>
+            </table>
         </div>
-    </div>
 
-    <div id="hybridSection" class="res-section">
-        <div class="card hybrid-box">
-            <h3>4. 最終的な買い目と配分</h3>
-            <div id="hybridSummary" style="text-align:center; margin-bottom:15px;"></div>
-            <div id="hybridDetails"></div>
+        <div class="detail-grid">
+            <div class="detail-card detail-a">
+                <span class="plan-title" style="color:var(--plan-a)">プランA 詳細</span>
+                <div id="listA"></div>
+            </div>
+            <div class="detail-card detail-b">
+                <span class="plan-title" style="color:var(--plan-b)">プランB 詳細</span>
+                <div id="listB"></div>
+            </div>
         </div>
     </div>
 </div>
@@ -97,7 +99,6 @@ function parse(text) {
     }).filter(v => v);
 }
 
-// 傾斜配分ロジック (最初のコードの核となるアルゴリズム)
 function calc(budget, data) {
     if (!data.length) return null;
     const invSum = data.reduce((s, d) => s + (1/d.odds), 0);
@@ -107,58 +108,54 @@ function calc(budget, data) {
         total += a;
         return { ...d, a: a };
     });
-    // 払い戻しが最も少ない買い目に100円ずつ足して予算に近づける
+    // 均等化の微調整
     while (total + 100 <= budget) {
         let t = al.reduce((m, c) => (c.a * c.odds < m.a * m.odds) ? c : m);
         t.a += 100; total += 100;
     }
     const pays = al.map(a => a.a * a.odds);
-    return { total, syn: 1/invSum, min: Math.min(...pays), max: Math.max(...pays), items: al };
+    return { 
+        total, 
+        syn: 1/invSum, 
+        min: Math.min(...pays), 
+        max: Math.max(...pays), 
+        items: al,
+        roi: (Math.min(...pays) / total * 100).toFixed(1)
+    };
 }
 
 function runAnalysis() {
-    const dA = parse(document.getElementById('inputA').value);
-    const dB = parse(document.getElementById('inputB').value);
-    if (!dA.length || !dB.length) return alert("買い目を入力してください");
-
-    const rA = calc(1000, dA);
-    const rB = calc(1000, dB);
-
-    document.getElementById('compareBody').innerHTML = `
-        <tr><td>合成オッズ</td><td>${rA.syn.toFixed(2)}倍</td><td>${rB.syn.toFixed(2)}倍</td></tr>
-        <tr><td>最低払戻額</td><td>${Math.floor(rA.min)}円</td><td>${Math.floor(rB.min)}円</td></tr>
-        <tr><td>最大払戻額</td><td>${Math.floor(rA.max)}円</td><td>${Math.floor(rB.max)}円</td></tr>
-    `;
-    document.getElementById('compareSection').style.display = 'block';
-}
-
-function runHybrid() {
-    const budget = parseInt(document.getElementById('totalBudget').value);
-    const ratio = parseFloat(document.getElementById('ratio').value);
+    const budget = parseInt(document.getElementById('budget').value);
     const dA = parse(document.getElementById('inputA').value);
     const dB = parse(document.getElementById('inputB').value);
 
-    const resA = calc(budget * ratio, dA);
-    const resB = calc(budget * (1 - ratio), dB);
+    if (!dA.length || !dB.length) return alert("買い目とオッズを入力してください");
 
-    document.getElementById('hybridSection').style.display = 'block';
-    document.getElementById('hybridSummary').innerHTML = `
-        <div style="font-size:12px; color:#666;">総投資額: ${(resA.total + resB.total).toLocaleString()}円</div>
-        <div class="total-pay">最大払戻: ${Math.floor(resA.max + resB.max).toLocaleString()}円</div>
-    `;
+    const resA = calc(budget, dA);
+    const resB = calc(budget, dB);
 
-    const renderTable = (res, title, colorClass) => `
-        <div style="margin-bottom:15px;">
-            <div class="${colorClass}" style="font-size:14px; border-bottom:1px solid #ddd; padding-bottom:5px;">${title} (${res.total}円)</div>
-            <table>
-                ${res.items.map(i => `<tr><td style="text-align:left;">${i.label}</td><td style="text-align:right;"><b>${i.a}円</b></td><td style="text-align:right; color:#666;">➔${Math.floor(i.a*i.odds)}</td></tr>`).join('')}
-            </table>
-        </div>
-    `;
+    document.getElementById('resultArea').style.display = 'block';
 
-    document.getElementById('hybridDetails').innerHTML = 
-        renderTable(resA, "プランA", "plan-label-a") + 
-        renderTable(resB, "プランB", "plan-label-b");
+    // サマリー表示
+    const row = (name, valA, valB) => `<tr><td>${name}</td><td><b>${valA}</b></td><td><b>${valB}</b></td></tr>`;
+    document.getElementById('summaryBody').innerHTML = 
+        row("合成オッズ", resA.syn.toFixed(2)+"倍", resB.syn.toFixed(2)+"倍") +
+        row("最低払戻額", Math.floor(resA.min).toLocaleString()+"円", Math.floor(resB.min).toLocaleString()+"円") +
+        row("最高払戻額", Math.floor(resA.max).toLocaleString()+"円", Math.floor(resB.max).toLocaleString()+"円") +
+        row("最低回収率", resA.roi+"%", resB.roi+"%");
+
+    // 詳細リスト表示
+    const renderList = (res, targetId) => {
+        document.getElementById(targetId).innerHTML = res.items.map(i => `
+            <div class="item-row">
+                <span>${i.label}</span>
+                <span>${i.a}円 <small class="pay-val">➔${Math.floor(i.a * i.odds)}</small></span>
+            </div>
+        `).join('') + `<div style="text-align:right; font-size:11px; margin-top:10px; color:#999;">合計投資: ${res.total}円</div>`;
+    };
+
+    renderList(resA, 'listA');
+    renderList(resB, 'listB');
 }
 </script>
 </body>
