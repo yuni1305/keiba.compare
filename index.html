@@ -18,15 +18,13 @@
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
         textarea { height: 120px; font-family: monospace; font-size: 13px; margin-top: 5px; }
         
-        /* ペーストボタンのデザイン */
         .header-flex { display: flex; justify-content: space-between; align-items: flex-end; }
         .btn-paste { background: #edf2f7; color: #4a5568; border: 1px solid #cbd5e0; padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; cursor: pointer; }
-        .btn-paste:active { background: #cbd5e0; }
-
+        
         button.btn-run { width: 100%; background: var(--primary); color: white; padding: 16px; border: none; border-radius: 4px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; }
         
-        .summary-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; background: white; border-radius: 8px; overflow: hidden; }
-        .summary-table th, .summary-table td { padding: 12px; text-align: center; border-bottom: 1px solid #eee; }
+        .summary-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; background: white; border-radius: 8px; overflow: hidden; font-size: 13px; }
+        .summary-table th, .summary-table td { padding: 10px 8px; text-align: center; border-bottom: 1px solid #eee; }
         .summary-table th { background: #f8f9fa; font-size: 11px; color: #666; }
         
         .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -39,19 +37,19 @@
         .pay-val { font-weight: bold; color: #c0392b; }
         
         .res-section { display: none; }
+        .safe { color: var(--primary); font-weight: bold; }
+        .danger { color: #e53e3e; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div class="card">
-        <h3>資金配分シミュレーション</h3>
-        
+        <h3>戦略比較シミュレーター</h3>
         <div class="input-group">
             <label>投資総額 (円)</label>
-            <input type="number" id="budget" value="1000" step="100">
+            <input type="number" id="budget" value="3000" step="100">
         </div>
-
         <div class="grid">
             <div>
                 <div class="header-flex">
@@ -68,7 +66,6 @@
                 <textarea id="inputB" placeholder="1-2-3 45.0&#10;1-2-4 60.0"></textarea>
             </div>
         </div>
-        
         <button class="btn-run" onclick="runAnalysis()">シミュレーション実行</button>
     </div>
 
@@ -100,13 +97,12 @@
 </div>
 
 <script>
-// ペースト機能の実装
 async function pasteTo(targetId) {
     try {
         const text = await navigator.clipboard.readText();
         document.getElementById(targetId).value = text;
     } catch (err) {
-        alert("ブラウザの制限により貼り付け機能が使用できません。枠内を長押しして貼り付けてください。");
+        alert("貼り付けに失敗しました。枠内を長押しして貼り付けてください。");
     }
 }
 
@@ -135,10 +131,11 @@ function calc(budget, data) {
     return { 
         total, 
         syn: 1/invSum, 
-        min: Math.min(...pays), 
-        max: Math.max(...pays), 
-        items: al,
-        roi: (Math.min(...pays) / total * 100).toFixed(1)
+        minPay: Math.min(...pays), 
+        maxPay: Math.max(...pays),
+        minRoi: (Math.min(...pays) / total * 100).toFixed(1),
+        maxRoi: (Math.max(...pays) / total * 100).toFixed(1),
+        items: al
     };
 }
 
@@ -147,26 +144,32 @@ function runAnalysis() {
     const dA = parse(document.getElementById('inputA').value);
     const dB = parse(document.getElementById('inputB').value);
 
-    if (!dA.length || !dB.length) return alert("買い目とオッズを入力してください");
+    if (!dA.length || !dB.length) return alert("データを入力してください");
 
     const resA = calc(budget, dA);
     const resB = calc(budget, dB);
 
     document.getElementById('resultArea').style.display = 'block';
 
-    const row = (name, valA, valB) => `<tr><td>${name}</td><td><b>${valA}</b></td><td><b>${valB}</b></td></tr>`;
+    const getRoiClass = (roi) => roi >= 100 ? 'safe' : 'danger';
+
+    const row = (name, valA, valB, classA='', classB='') => 
+        `<tr><td>${name}</td><td class="${classA}">${valA}</td><td class="${classB}">${valB}</td></tr>`;
+
     document.getElementById('summaryBody').innerHTML = 
         row("合成オッズ", resA.syn.toFixed(2)+"倍", resB.syn.toFixed(2)+"倍") +
-        row("最低払戻額", Math.floor(resA.min).toLocaleString()+"円", Math.floor(resB.min).toLocaleString()+"円") +
-        row("最低回収率", resA.roi+"%", resB.roi+"%");
+        row("最低払戻額", Math.floor(resA.minPay).toLocaleString()+"円", Math.floor(resB.minPay).toLocaleString()+"円") +
+        row("最高払戻額", Math.floor(resA.maxPay).toLocaleString()+"円", Math.floor(resB.maxPay).toLocaleString()+"円") +
+        row("最低回収率", resA.minRoi+"%", resB.minRoi+"%", getRoiClass(resA.minRoi), getRoiClass(resB.minRoi)) +
+        row("最高回収率", resA.maxRoi+"%", resB.maxRoi+"%", getRoiClass(resA.maxRoi), getRoiClass(resB.maxRoi));
 
     const renderList = (res, targetId) => {
         document.getElementById(targetId).innerHTML = res.items.map(i => `
             <div class="item-row">
                 <span>${i.label}</span>
-                <span>${i.a}円 <small class="pay-val">➔${Math.floor(i.a * i.odds)}</small></span>
+                <span>${i.a}円 <small class="pay-val">➔${Math.floor(i.a * i.odds).toLocaleString()}</small></span>
             </div>
-        `).join('') + `<div style="text-align:right; font-size:10px; margin-top:8px; color:#999;">投資合計: ${res.total}円</div>`;
+        `).join('') + `<div style="text-align:right; font-size:10px; margin-top:8px; color:#999;">投資合計: ${res.total.toLocaleString()}円</div>`;
     };
 
     renderList(resA, 'listA');
