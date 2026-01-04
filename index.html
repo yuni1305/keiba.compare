@@ -66,7 +66,36 @@
                 <textarea id="inputB" placeholder="1-2-3 45.0&#10;1-2-4 60.0"></textarea>
             </div>
         </div>
-        <button class="btn-run" onclick="runAnalysis()">シミュレーション実行</button>
+        <button class="btn-run" onclick="runAnalysis()">シミュレーション実行
+        </button>
+
+            <a href="https://yuni1305.github.io/keiba.calc/" class="btn-secondary">
+             買い目検討へ
+        </a>
+
+        <style>
+            .btn-secondary {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin-top: 12px;
+                padding: 12px;
+                background: transparent;
+                color: var(--primary);
+                border: 2px solid var(--primary);
+                border-radius: 4px;
+                text-decoration: none;
+                font-size: 14px;
+                font-weight: bold;
+                transition: background 0.2s;
+            }
+            .btn-secondary:hover {
+                background: rgba(27, 67, 50, 0.05);
+            }
+            .btn-secondary span {
+                margin-right: 8px;
+            }
+        </style>
     </div>
 
     <div id="resultArea" class="res-section">
