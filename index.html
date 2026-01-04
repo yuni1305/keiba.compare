@@ -6,9 +6,12 @@
     <title>競馬 戦略比較シミュレーター</title>
     <style>
         :root { --primary: #1b4332; --plan-a: #2980b9; --plan-b: #8e44ad; --bg: #f4f7f6; }
-        body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 10px; color: #2c3e50; }
-        .container { max-width: 600px; margin: 0 auto; }
-        .card { background: white; padding: 18px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 15px; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 10px; color: #2c3e50; display: flex; justify-content: center; }
+        
+        /* 全体の幅制限 */
+        .container { width: 100%; max-width: 500px; margin: 0 auto; }
+        
+        .card { background: white; padding: 18px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 15px; box-sizing: border-box; }
         h3 { margin-top: 0; color: var(--primary); font-size: 16px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
         
         .input-group { margin-bottom: 15px; }
@@ -16,23 +19,31 @@
         input, textarea { width: 100%; padding: 12px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 16px; box-sizing: border-box; }
         
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
-        textarea { height: 120px; font-family: monospace; font-size: 13px; margin-top: 5px; }
+        textarea { height: 120px; font-family: monospace; font-size: 13px; margin-top: 5px; resize: none; }
         
         .header-flex { display: flex; justify-content: space-between; align-items: flex-end; }
         .btn-paste { background: #edf2f7; color: #4a5568; border: 1px solid #cbd5e0; padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; cursor: pointer; }
         
         .option-box { background: #f8f9fa; padding: 8px; border-radius: 4px; margin-bottom: 5px; border: 1px solid #e2e8f0; }
-        .checkbox-label { display: flex; align-items: center; font-size: 11px; cursor: pointer; font-weight: bold; }
+        .checkbox-label { display: flex; align-items: center; font-size: 10px; cursor: pointer; font-weight: bold; line-height: 1.2; }
         .checkbox-label input { width: auto; margin-right: 6px; }
 
         button.btn-run { width: 100%; background: var(--primary); color: white; padding: 16px; border: none; border-radius: 4px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; }
         
+        .btn-secondary {
+            display: flex; align-items: center; justify-content: center;
+            margin-top: 12px; padding: 12px; background: transparent;
+            color: var(--primary); border: 2px solid var(--primary);
+            border-radius: 4px; text-decoration: none; font-size: 14px; font-weight: bold; transition: background 0.2s;
+        }
+        .btn-secondary:hover { background: rgba(27, 67, 50, 0.05); }
+
         .summary-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; background: white; border-radius: 8px; overflow: hidden; font-size: 13px; }
         .summary-table th, .summary-table td { padding: 10px 8px; text-align: center; border-bottom: 1px solid #eee; }
         .summary-table th { background: #f8f9fa; font-size: 11px; color: #666; }
         
         .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .detail-card { background: white; padding: 12px; border-radius: 8px; border-top: 4px solid #ccc; }
+        .detail-card { background: white; padding: 12px; border-radius: 8px; border-top: 4px solid #ccc; box-sizing: border-box; }
         .detail-a { border-top-color: var(--plan-a); }
         .detail-b { border-top-color: var(--plan-b); }
         
@@ -41,7 +52,7 @@
         .pay-val { font-weight: bold; color: #c0392b; }
         .tag-moto { background: #718096; color: white; font-size: 9px; padding: 1px 3px; border-radius: 2px; margin-right: 3px; }
         
-        .res-section { display: none; }
+        .res-section { display: none; width: 100%; }
         .safe { color: var(--primary); font-weight: bold; }
         .danger { color: #e53e3e; font-weight: bold; }
     </style>
@@ -63,7 +74,7 @@
                 </div>
                 <textarea id="inputA" placeholder="1-2 5.5&#10;1-3 8.0"></textarea>
                 <div class="option-box">
-                    <label class="checkbox-label"><input type="checkbox" id="motoA"> 人気の買い目を「元返し」にする</label>
+                    <label class="checkbox-label"><input type="checkbox" id="motoA"> 人気の買い目を「元返し」</label>
                 </div>
             </div>
             <div>
@@ -73,48 +84,20 @@
                 </div>
                 <textarea id="inputB" placeholder="1-2-3 45.0&#10;1-2-4 60.0"></textarea>
                 <div class="option-box">
-                    <label class="checkbox-label"><input type="checkbox" id="motoB"> 人気の買い目を「元返し」にする</label>
+                    <label class="checkbox-label"><input type="checkbox" id="motoB"> 人気の買い目を「元返し」</label>
                 </div>
             </div>
         </div>
         <button class="btn-run" onclick="runAnalysis()">シミュレーション実行</button>
-         </button>
-
-            <a href="https://yuni1305.github.io/keiba.calc/" class="btn-secondary">
-             資金配分の検討へ
-        </a>
-
-        <style>
-            .btn-secondary {
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                margin-top: 12px;
-                padding: 12px;
-                background: transparent;
-                color: var(--primary);
-                border: 2px solid var(--primary);
-                border-radius: 4px;
-                text-decoration: none;
-                font-size: 14px;
-                font-weight: bold;
-                transition: background 0.2s;
-            }
-            .btn-secondary:hover {
-                background: rgba(27, 67, 50, 0.05);
-            }
-            .btn-secondary span {
-                margin-right: 8px;
-            }
-        </style>
-    </div>
+        
+        <a href="https://yuni1305.github.io/keiba.calc/" class="btn-secondary">資金配分の検討へ</a>
     </div>
 
     <div id="resultArea" class="res-section">
         <div class="card" style="padding:0;">
             <table class="summary-table">
                 <thead>
-                    <tr><th>比較項目</th><th style="color:var(--plan-a)">プランA</th><th style="color:var(--plan-b)">プランB</th></tr>
+                    <tr><th>項目</th><th style="color:var(--plan-a)">A</th><th style="color:var(--plan-b)">B</th></tr>
                 </thead>
                 <tbody id="summaryBody"></tbody>
             </table>
@@ -147,7 +130,7 @@ function parse(text) {
         const o = parseFloat(p.pop());
         return (p.length > 0 && !isNaN(o)) ? { label: p.join('-'), odds: o } : null;
     }).filter(v => v);
-    return data.sort((a, b) => a.odds - b.odds); // オッズ順にソート（元返し判定のため）
+    return data.sort((a, b) => a.odds - b.odds);
 }
 
 function calc(budget, data, isMoto) {
@@ -156,7 +139,6 @@ function calc(budget, data, isMoto) {
     let al = [];
 
     if (isMoto && data.length > 1) {
-        // 元返しの計算ロジック
         const favorite = data[0];
         let favAmount = Math.ceil((budget / favorite.odds) / 100) * 100;
         const remainBudget = budget - favAmount;
@@ -171,7 +153,6 @@ function calc(budget, data, isMoto) {
             total += a;
         });
     } else {
-        // 通常の傾斜配分
         const invSum = data.reduce((s, d) => s + (1/d.odds), 0);
         al = data.map(d => {
             let a = Math.max(100, Math.floor((budget * (1/d.odds) / invSum) / 100) * 100);
@@ -180,7 +161,6 @@ function calc(budget, data, isMoto) {
         });
     }
 
-    // 端数調整（余った予算を払戻最小の買い目へ）
     while (total + 100 <= budget) {
         let t = al.reduce((m, c) => (c.a * c.odds < m.a * m.odds) ? c : m);
         t.a += 100; total += 100;
@@ -214,10 +194,10 @@ function runAnalysis() {
 
     document.getElementById('summaryBody').innerHTML = 
         row("合成オッズ", resA.syn.toFixed(2)+"倍", resB.syn.toFixed(2)+"倍") +
-        row("最低払戻額", Math.floor(resA.minPay).toLocaleString()+"円", Math.floor(resB.minPay).toLocaleString()+"円") +
-        row("最高払戻額", Math.floor(resA.maxPay).toLocaleString()+"円", Math.floor(resB.maxPay).toLocaleString()+"円") +
-        row("最低回収率", resA.minRoi+"%", resB.minRoi+"%", getRoiClass(resA.minRoi), getRoiClass(resB.minRoi)) +
-        row("最高回収率", resA.maxRoi+"%", resB.maxRoi+"%", getRoiClass(resA.maxRoi), getRoiClass(resB.maxRoi));
+        row("最低払戻", Math.floor(resA.minPay).toLocaleString()+"円", Math.floor(resB.minPay).toLocaleString()+"円") +
+        row("最高払戻", Math.floor(resA.maxPay).toLocaleString()+"円", Math.floor(resB.maxPay).toLocaleString()+"円") +
+        row("最低回収", resA.minRoi+"%", resB.minRoi+"%", getRoiClass(resA.minRoi), getRoiClass(resB.minRoi)) +
+        row("最高回収", resA.maxRoi+"%", resB.maxRoi+"%", getRoiClass(resA.maxRoi), getRoiClass(resB.maxRoi));
 
     const renderList = (res, targetId) => {
         document.getElementById(targetId).innerHTML = res.items.map(i => `
@@ -225,7 +205,7 @@ function runAnalysis() {
                 <span>${i.isMoto ? '<span class="tag-moto">元</span>' : ''}${i.label}</span>
                 <span>${i.a}円 <small class="pay-val">➔${Math.floor(i.a * i.odds).toLocaleString()}</small></span>
             </div>
-        `).join('') + `<div style="text-align:right; font-size:10px; margin-top:8px; color:#999;">投資合計: ${res.total.toLocaleString()}円</div>`;
+        `).join('') + `<div style="text-align:right; font-size:10px; margin-top:8px; color:#999;">投資: ${res.total.toLocaleString()}円</div>`;
     };
 
     renderList(resA, 'listA');
